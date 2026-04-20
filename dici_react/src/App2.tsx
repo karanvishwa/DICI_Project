@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, Zap, BarChart3, PieChart, Layers, Cpu, Table as TableIcon, Filter } from 'lucide-react';
 import PlotModule from 'react-plotly.js';
-import ResultsTable from './ResultsTable';
-import SightingGraph from './SightingGraph';
+import ResultsTable from './graphs/ResultsTable';
+import SightingGraph from './graphs/SightingGraph';
+import F1IterationsGraph from './graphs/F1IterationsGraph';
+import ModelComparisonChart from './graphs/ModelComparisonChart';
 
 const Plot = PlotModule.default || PlotModule;
 
@@ -133,13 +135,21 @@ function App2() {
     return (
         <div className="min-h-screen bg-[#050810] text-white font-sans pb-12">
             {/* ── HEADER ── */}
-            <header className="w-full border-b border-[#1e2d45] px-8 py-4 flex justify-between items-center">
-                <div>
-                    <div className="text-xl font-bold text-cyan-400">⚡ DICI</div>
-                    <div className="text-xs text-gray-500">Dynamic IDS Dashboard</div>
+            <header className="w-full border-b border-[#1e2d45] px-8 py-4 flex flex-row justify-between items-center">
+                <div className="flex flex-row gap-5 items-center">
+                    <div>
+                        <div className="logo text-left">⚡ DICI</div>
+                        <div className="subtitle">Dynamic IDS with CTI Integrated · IEEE TMLCN 2025</div>
+                    </div>
+                    <span className="pill green">ML-IDS</span>
+                    <span className="pill">KMeans++</span>
+                    <span className="pill warn">Online Learning</span>
                 </div>
 
                 <div className="flex items-center gap-4">
+
+                    <div className="pulse"></div>
+                    <span className="ts" id="ts">Updated</span>
                     <span className="text-xs text-gray-400">
                         {state?.last_updated || "Connecting..."}
                     </span>
@@ -207,40 +217,40 @@ function App2() {
                 {/* KPI Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                     <div className="kpi">
-                        <div className="label">IDS + CTI · F1 Score</div>
-                        <div className="val c-green" id="kpi_f1_cti">{kpiResults.kpi_f1_cti?.val ?? '—'}</div>
-                        <div className="sub">Paper target: 89.52%</div>
-                        <div className="bar"><div className="bar-fill" id="bar_f1_cti" style={{ width: kpiResults.kpi_f1_cti?.width ?? '0%', background: 'var(--accent2)' }}></div></div>
+                        <div className="label text-left">IDS + CTI · F1 Score</div>
+                        <div className="val c-green text-left" id="kpi_f1_cti">{kpiResults.kpi_f1_cti?.val ?? '—'}</div>
+                        <div className="sub text-left">Paper target: 89.52%</div>
+                        <div className="bar text-left"><div className="bar-fill" id="bar_f1_cti" style={{ width: kpiResults.kpi_f1_cti?.width ?? '0%', background: 'var(--accent2)' }}></div></div>
                     </div>
                     <div className="kpi">
-                        <div className="label">Baseline · No CTI</div>
-                        <div className="val c-blue" id="kpi_f1_base">{kpiResults.kpi_f1_base?.val ?? '—'}</div>
-                        <div className="sub">Static offline model</div>
-                        <div className="bar"><div className="bar-fill" id="bar_f1_base" style={{ width: kpiResults.kpi_f1_base?.width ?? '0%', background: 'var(--accent)' }}></div></div>
+                        <div className="label text-left">Baseline · No CTI</div>
+                        <div className="val c-blue text-left" id="kpi_f1_base">{kpiResults.kpi_f1_base?.val ?? '—'}</div>
+                        <div className="sub text-left">Static offline model</div>
+                        <div className="bar text-left"><div className="bar-fill" id="bar_f1_base" style={{ width: kpiResults.kpi_f1_base?.width ?? '0%', background: 'var(--accent)' }}></div></div>
                     </div>
                     <div className="kpi">
-                        <div className="label">CTI F1 Improvement</div>
-                        <div className="val c-warn" id="kpi_imp">{kpiResults.kpi_imp?.val ?? '—'}</div>
-                        <div className="sub">Paper: +9.29%</div>
-                        <div className="bar"><div className="bar-fill" id="bar_imp" style={{ width: kpiResults.kpi_imp?.width ?? '0%', background: 'var(--warn)' }}></div></div>
+                        <div className="label text-left">CTI F1 Improvement</div>
+                        <div className="val c-warn text-left" id="kpi_imp">{kpiResults.kpi_imp?.val ?? '—'}</div>
+                        <div className="sub text-left">Paper: +9.29%</div>
+                        <div className="bar text-left"><div className="bar-fill" id="bar_imp" style={{ width: kpiResults.kpi_imp?.width ?? '0%', background: 'var(--warn)' }}></div></div>
                     </div>
                     <div className="kpi">
-                        <div className="label">KMeans++ vs Rule</div>
-                        <div className="val c-green" id="kpi_km_imp">{kpiResults.kpi_km_imp?.val ?? '—'}</div>
-                        <div className="sub">Paper: +30.92%</div>
-                        <div className="bar"><div className="bar-fill" id="bar_km" style={{ width: kpiResults.kpi_km_imp?.width ?? '0%', background: 'var(--accent2)' }}></div></div>
+                        <div className="label text-left">KMeans++ vs Rule</div>
+                        <div className="val c-green text-left" id="kpi_km_imp">{kpiResults.kpi_km_imp?.val ?? '—'}</div>
+                        <div className="sub text-left">Paper: +30.92%</div>
+                        <div className="bar text-left"><div className="bar-fill" id="bar_km" style={{ width: kpiResults.kpi_km_imp?.width ?? '0%', background: 'var(--accent2)' }}></div></div>
                     </div>
                     <div className="kpi">
-                        <div className="label">SVM False Positive Rate</div>
-                        <div className="val c-blue" id="kpi_svm_fpr">{kpiResults.kpi_svm_fpr?.val ?? '—'}</div>
-                        <div className="sub">Paper: 7.70%</div>
-                        <div className="bar"><div className="bar-fill" id="bar_svm_fpr" style={{ width: kpiResults.kpi_svm_fpr?.width ?? '0%', background: 'var(--accent)' }}></div></div>
+                        <div className="label text-left">SVM False Positive Rate</div>
+                        <div className="val c-blue text-left" id="kpi_svm_fpr">{kpiResults.kpi_svm_fpr?.val ?? '—'}</div>
+                        <div className="sub text-left">Paper: 7.70%</div>
+                        <div className="bar text-left"><div className="bar-fill" id="bar_svm_fpr" style={{ width: kpiResults.kpi_svm_fpr?.width ?? '0%', background: 'var(--accent)' }}></div></div>
                     </div>
                     <div className="kpi">
-                        <div className="label">KMeans False Positive</div>
-                        <div className="val c-warn" id="kpi_km_fpr">{kpiResults.kpi_km_fpr?.val ?? '—'}</div>
-                        <div className="sub">Paper: 42.78%</div>
-                        <div className="bar"><div className="bar-fill" id="bar_km_fpr" style={{ width: kpiResults.kpi_km_fpr?.width ?? '0%', background: 'var(--warn)' }}></div></div>
+                        <div className="label text-left">KMeans False Positive</div>
+                        <div className="val c-warn text-left" id="kpi_km_fpr">{kpiResults.kpi_km_fpr?.val ?? '—'}</div>
+                        <div className="sub text-left">Paper: 42.78%</div>
+                        <div className="bar text-left"><div className="bar-fill" id="bar_km_fpr" style={{ width: kpiResults.kpi_km_fpr?.width ?? '0%', background: 'var(--warn)' }}></div></div>
                     </div>
                 </div>
 
@@ -250,10 +260,7 @@ function App2() {
                     {/* Graph 1: F1 Over Iterations (Fig 6) */}
                     <div className="xl:col-span-2 bg-[#111827] p-6 rounded-xl border border-[#1e2d45]">
                         <h3 className="text-[10px] text-gray-500 uppercase mb-4 flex items-center gap-2"><Activity size={14} /> 1. F1 Score – Online Learning Iterations (Fig 6)</h3>
-                        <Plot className="w-full h-[320px]" data={[
-                            { x: results.exp1?.iterations, y: results.exp1?.with_cti_f1, name: 'IDS + CTI', type: 'scatter', mode: 'lines+markers', line: { color: COLORS.green, width: 3 } },
-                            { x: results.exp1?.iterations, y: results.exp1?.no_cti_f1, name: 'No CTI', type: 'scatter', mode: 'lines', line: { color: COLORS.danger, dash: 'dot' } }
-                        ]} layout={PLOT_LAYOUT_BASE} config={{ displayModeBar: false }} />
+                        <F1IterationsGraph results={results} />
                     </div>
 
                     {/* Graph 2: Traffic Distribution (Donut) */}
@@ -284,10 +291,7 @@ function App2() {
                     {/* Graph 3: Model Comparison Bar (Fig 8) */}
                     <div className="bg-[#111827] p-6 rounded-xl border border-[#1e2d45] xl:col-span-3">
                         <h3 className="text-[10px] text-gray-500 uppercase mb-4 flex items-center gap-2"><BarChart3 size={14} /> 3. Performance Metrics: CTI Transfer vs IoC Database (Fig 8)</h3>
-                        <Plot className="w-full h-[300px]" data={[
-                            { x: ['IDS+CTI', 'IDS+IoC', 'Standalone', 'IoC Only'], y: [results.exp2?.IDS_CTI_Transfer?.f1, results.exp2?.IDS_IoC_Database?.f1, results.exp2?.Standalone_IDS?.f1, results.exp2?.IoC_DB_only?.f1], name: 'F1 Score', type: 'bar', marker: { color: COLORS.accent } },
-                            { x: ['IDS+CTI', 'IDS+IoC', 'Standalone', 'IoC Only'], y: [results.exp2?.IDS_CTI_Transfer?.precision, results.exp2?.IDS_IoC_Database?.precision, results.exp2?.Standalone_IDS?.precision, results.exp2?.IoC_DB_only?.precision], name: 'Precision', type: 'bar', marker: { color: COLORS.green } }
-                        ]} layout={{ ...PLOT_LAYOUT_BASE, barmode: 'group' }} config={{ displayModeBar: false }} />
+                        <ModelComparisonChart exp2Data={results.exp2 || {}} />
                     </div>
                 </div>
 
