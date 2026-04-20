@@ -264,7 +264,21 @@ function App2() {
                             values: [state?.traffic_stream?.benign || 70, state?.traffic_stream?.malicious || 20, state?.traffic_stream?.outlier || 10],
                             labels: ['Benign', 'Malicious', 'Outlier'],
                             marker: { colors: [COLORS.green, COLORS.danger, COLORS.warn] }
-                        }]} layout={{ ...PLOT_LAYOUT_BASE, margin: { t: 0, b: 0, l: 0, r: 0 } }} config={{ displayModeBar: false }} />
+                        }]} layout={{
+                            ...PLOT_LAYOUT_BASE, margin: { t: 0, b: 0, l: 0, r: 0 },
+                            annotations: [
+                                {
+                                    x: 0.5,
+                                    y: 0.5,
+                                    text: `<b>${state?.traffic_stream?.total ?? 100}</b><br><span style="font-size:10px; color:#607080">flows</span>`,
+                                    showarrow: false,
+                                    font: { color: COLORS.text, size: 16 },
+                                    xref: 'paper',
+                                    yref: 'paper',
+                                },
+                            ],
+                        }} config={{ displayModeBar: false }}
+                        />
                     </div>
 
                     {/* Graph 3: Model Comparison Bar (Fig 8) */}
