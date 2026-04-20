@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, Zap, BarChart3, PieChart, Layers, Cpu, Table as TableIcon, Filter } from 'lucide-react';
 import PlotModule from 'react-plotly.js';
 import ResultsTable from './ResultsTable';
+import SightingGraph from './SightingGraph';
 
 const Plot = PlotModule.default || PlotModule;
 
@@ -102,13 +103,11 @@ function App2() {
     const [kpiResults, setKpiResults] = useState(kpi_results);
 
     const setKPI = (id: any, val: any, barId: any, max: number) => {
-        console.log(`Setting KPI ${id} to ${val} (bar: ${barId}, max: ${max})`);
-
         setKpiResults(prev => ({
             ...prev,
             [id]: {
                 val: val,
-                width:  Math.min(100, Math.abs(parseFloat(val) || 0) / max * 100) + '%'
+                width: Math.min(100, Math.abs(parseFloat(val) || 0) / max * 100) + '%'
             }
         }));
     }
@@ -229,7 +228,7 @@ function App2() {
                         <div className="label">KMeans++ vs Rule</div>
                         <div className="val c-green" id="kpi_km_imp">{kpiResults.kpi_km_imp?.val ?? '—'}</div>
                         <div className="sub">Paper: +30.92%</div>
-                        <div className="bar"><div className="bar-fill" id="bar_km" style={{ width: kpiResults.kpi_km_imp?.width ??           '0%', background: 'var(--accent2)' }}></div></div>
+                        <div className="bar"><div className="bar-fill" id="bar_km" style={{ width: kpiResults.kpi_km_imp?.width ?? '0%', background: 'var(--accent2)' }}></div></div>
                     </div>
                     <div className="kpi">
                         <div className="label">SVM False Positive Rate</div>
@@ -279,16 +278,10 @@ function App2() {
                 </div>
 
                 {/* ── SECTION 2: CTI & FEATURE ANALYSIS (3 GRAPHS) ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Graph 4: Sighting Type Impact (Fig 12) */}
-                    <div className="bg-[#111827] p-6 rounded-xl border border-[#1e2d45]">
-                        <h3 className="text-[10px] text-gray-500 uppercase mb-4 flex items-center gap-2"><Layers size={14} /> 4. F1 by Sighting Type (Fig 12)</h3>
-                        <Plot className="w-full h-[300px]" data={[{
-                            y: Object.keys(results.exp4 || {}), x: Object.values(results.exp4 || {}),
-                            type: 'bar', orientation: 'h', marker: { color: COLORS.accent }
-                        }]} layout={{ ...PLOT_LAYOUT_BASE, margin: { ...PLOT_LAYOUT_BASE.margin, l: 80 } }} config={{ displayModeBar: false }} />
-                    </div>
+                <SightingGraph data={results.exp4 || {}} />
 
+                {/* ── SECTION 2: CTI & FEATURE ANALYSIS (3 GRAPHS) ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Graph 5: Feature Count vs F1 (Fig 13 Left) */}
                     <div className="bg-[#111827] p-6 rounded-xl border border-[#1e2d45]">
                         <h3 className="text-[10px] text-gray-500 uppercase mb-4 flex items-center gap-2"><Filter size={14} /> 5. F1 vs Feature Count (Fig 13)</h3>
@@ -309,7 +302,7 @@ function App2() {
                 </div>
 
                 {/* ── SECTION 3: SYSTEM OPTIMIZATION (2 GRAPHS + 1 TABLE) ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Graph 7: Batch Size Optimization (Fig 14/15) */}
                     <div className="bg-[#111827] p-6 rounded-xl border border-[#1e2d45]">
                         <h3 className="text-[10px] text-gray-500 uppercase mb-4 flex items-center gap-2"><Layers size={14} /> 7. Batch Size Optimisation (Fig 14)</h3>
@@ -326,25 +319,6 @@ function App2() {
                             { x: ['Time', 'Mem', 'CPU'], y: [3.22, 17.43, 36.6], name: 'ML-IDS', type: 'bar', marker: { color: COLORS.accent } },
                             { x: ['Time', 'Mem', 'CPU'], y: [59.3, 65.14, 79.5], name: 'DL-IDS', type: 'bar', marker: { color: COLORS.danger } }
                         ]} layout={{ ...PLOT_LAYOUT_BASE, barmode: 'group' }} config={{ displayModeBar: false }} />
-                    </div>
-
-                    {/* The Table: Detailed Results Summary */}
-                    <div className="bg-[#111827] p-6 rounded-xl border border-[#1e2d45]">
-                        <h3 className="text-[10px] text-gray-500 uppercase mb-4 flex items-center gap-2"><TableIcon size={14} /> 9. Experiment Results Table</h3>
-                        <div className="overflow-y-auto h-[300px] font-mono text-[11px]">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="text-left text-gray-500 border-b border-[#1e2d45]">
-                                        <th className="pb-2">Exp</th><th className="pb-2">Config</th><th className="pb-2">F1 Score</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-gray-300">
-                                    <tr className="border-b border-[#1e2d45]/50"><td className="py-2">1</td><td>IDS+CTI</td><td className="text-emerald-400">89.52%</td></tr>
-                                    <tr className="border-b border-[#1e2d45]/50"><td className="py-2">2</td><td>Transfer</td><td className="text-cyan-400">88.10%</td></tr>
-                                    <tr className="border-b border-[#1e2d45]/50"><td className="py-2">3</td><td>KMeans++</td><td className="text-emerald-400">92.40%</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
                 {/* ── RESULTS TABLE ── */}
