@@ -1,0 +1,1 @@
+{"data": {"id": "218.162.132.135", "type": "ip_address", "attributes": {"reputation": -27, "last_analysis_date": 1694325378, "country": "US", "total_votes": {"harmless": 1, "malicious": 10}, "last_analysis_stats": {"harmless": 67, "malicious": 5, "suspicious": 0, "undetected": 8, "timeout": 0}, "tags": [], "last_analysis_results": {}}}}

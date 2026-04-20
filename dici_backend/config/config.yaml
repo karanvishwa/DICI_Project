@@ -1,0 +1,65 @@
+api:
+  virustotal_key: "32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc"
+  virustotal_base_url: "https://www.virustotal.com/api/v3"
+  request_timeout: 30
+  max_retries: 3
+  retry_delay: 2
+
+data:
+  sighting_raw_path: "data/raw/sighting_data.csv"
+  cti_reports_dir: "data/cti_reports/"
+  processed_sighting_path: "data/processed/sighting_processed.csv"
+  processed_cti_path: "data/processed/cti_processed.csv"
+
+preprocessing:
+  test_size: 0.2
+  random_state: 42
+  drop_features: ["time_start","time_end","src_ip","dest_ip","src_port"]
+  categorical_features: ["protocol","flags","forwarding_status","source_type_of_service"]
+  sighting_label_col: "label"
+  cti_label_col: "label"
+  missing_threshold: 0.5
+  sampling_strategy: "auto"
+
+ids_model:
+  svm:
+    alpha: 0.1
+    penalty: 11
+    loss: "hinge"
+    random_state: 456
+    max_iter: 1000
+  kmeans:
+    n_clusters: 2
+    random_state: 42
+    max_iter: 100
+  model_save_path: "data/processed/ids_model.joblib"
+
+cti_transfer_model:
+  kmeanspp:
+    n_clusters: 2
+    random_state: 42
+    init: "k-means++"
+    max_iter: 300
+  model_save_path: "data/processed/cti_model.joblib"
+  n_features: 50
+
+online_learning:
+  cti_update_threshold: 10
+  ids_update_threshold: 224
+  n_epochs: 10
+  sighting_type: "outlier"
+
+evaluation:
+  n_iterations: 21
+  results_dir: "data/processed/results/"
+
+dashboard:
+  host: "0.0.0.0"
+  port: 5000
+  debug: true
+  update_interval: 3000
+
+logging:
+  level: "INFO"
+  log_file: "data/processed/dici.log"
+  format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"

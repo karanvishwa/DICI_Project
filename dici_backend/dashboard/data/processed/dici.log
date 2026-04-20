@@ -1,0 +1,3 @@
+2026-04-20 09:48:09,881 | ERROR | __main__ | Pipeline error: Command '['C:\\Users\\karan\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'scripts/run_pipeline.py']' returned non-zero exit status 3221225786.
+2026-04-20 09:48:55,351 | ERROR | __main__ | Pipeline error: Command '['C:\\Users\\karan\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'scripts/run_pipeline.py']' returned non-zero exit status 3221225786.
+2026-04-20 12:12:01,556 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
