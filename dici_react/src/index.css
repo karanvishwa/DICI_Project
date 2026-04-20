@@ -29,6 +29,13 @@
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
+  --bg:#050810;--surface:#0c1120;--card:#111827;--card2:#161f30;
+  --border:#1e2d45;--border2:#243349;
+  --accent:#00d4ff;--accent2:#00ff9d;--warn:#ffb700;--danger:#ff4757;
+  --text:#e8f0fe;--muted:#607080;--faint:#2a3a52;
+  --font-mono:'Space Mono',monospace;--font-body:'DM Sans',sans-serif;
+  --glow-blue:0 0 20px rgba(0,212,255,.25);--glow-green:0 0 20px rgba(0,255,157,.2);
+
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;

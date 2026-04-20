@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, Zap, BarChart3, PieChart, Layers, Cpu, Table as TableIcon, Filter, HardDrive } from 'lucide-react';
+import { Activity, Zap, BarChart3, PieChart, Layers, Cpu, Table as TableIcon, Filter } from 'lucide-react';
 import PlotModule from 'react-plotly.js';
+import ResultsTable from './ResultsTable';
 
 const Plot = PlotModule.default || PlotModule;
 
@@ -23,6 +24,9 @@ const PLOT_LAYOUT_BASE: any = {
     legend: { orientation: 'h', y: 1.1, font: { color: COLORS.text } }
 };
 
+function fmt(v: any) { return v != null ? (+v).toFixed(2) + '%' : '—'; }
+function fmtNum(v: any) { return v != null ? (+v).toFixed(2) : '—'; }
+
 function App2() {
     const [state, setState] = useState<DashboardState | null>(null);
     const [isRunning, setIsRunning] = useState(false);
@@ -32,6 +36,25 @@ function App2() {
             const res = await fetch(`${API_BASE}/api/state`);
             const data = await res.json();
             setState(data);
+
+            // ── KPIs ──
+            const e1 = data.results.exp1 || {};
+            const e3 = data.results.exp3 || {};
+            const baseline = e1.no_cti_f1 ? e1.no_cti_f1[0] : null;
+            const withCTI = e1.final_with || null;
+            const imp = e1.improvement || 0;
+            setKPI('kpi_f1_cti', fmt(withCTI), 'bar_f1_cti', 100);
+            setKPI('kpi_f1_base', fmt(baseline), 'bar_f1_base', 100);
+            setKPI('kpi_imp', (imp >= 0 ? '+' : '') + fmtNum(imp) + '%', 'bar_imp', 20);
+            const km_m = e3.kmeanspp || {};
+            const rb_m = e3.rule_based || {};
+            const km_imp = (km_m.f1 || 0) - (rb_m.f1 || 0);
+            setKPI('kpi_km_imp', (km_imp >= 0 ? '+' : '') + fmtNum(km_imp) + '%', 'bar_km', 50);
+            // SVM / KMeans FPR (from exp2 standalone IDS metrics)
+            const sa = (data.results.exp2 || {}).Standalone_IDS || {};
+            setKPI('kpi_svm_fpr', fmt(sa.svm_fpr || null), 'bar_svm_fpr', 20);
+            setKPI('kpi_km_fpr', fmt(sa.kmeans_fpr || null), 'bar_km_fpr', 60);
+
             setIsRunning(data.pipeline_running);
         } catch (err) { console.error("Sync error:", err); }
     }, []);
@@ -49,14 +72,46 @@ function App2() {
         await fetch(`${API_BASE}/api/run_pipeline`, { method: 'POST' });
     };
 
-    // --- KPI Component ---
-    const KPI = ({ label, val, sub }: any) => (
-        <div className="bg-[#111827] border border-[#1e2d45] rounded-xl p-5 w-full">
-            <div className="text-xs text-gray-400">{label}</div>
-            <div className="text-2xl font-bold mt-1">{val}</div>
-            <div className="text-xs text-gray-500">{sub}</div>
-        </div>
-    );
+    const kpi_results = {
+        kpi_f1_cti: {
+            val: 0,
+            width: 0,
+        },
+        kpi_f1_base: {
+            val: 0,
+            width: 0,
+        },
+        kpi_imp: {
+            val: 0,
+            width: 0,
+        },
+        kpi_km_imp: {
+            val: 0,
+            width: 0,
+        },
+        kpi_svm_fpr: {
+            val: 0,
+            width: 0,
+        },
+        kpi_km_fpr: {
+            val: 0,
+            width: 0,
+        },
+    }
+
+    const [kpiResults, setKpiResults] = useState(kpi_results);
+
+    const setKPI = (id: any, val: any, barId: any, max: number) => {
+        console.log(`Setting KPI ${id} to ${val} (bar: ${barId}, max: ${max})`);
+
+        setKpiResults(prev => ({
+            ...prev,
+            [id]: {
+                val: val,
+                width:  Math.min(100, Math.abs(parseFloat(val) || 0) / max * 100) + '%'
+            }
+        }));
+    }
 
     const [ctiSearch, setCtiSearch] = useState("");
     const [ctiData, setCtiData] = useState<any>(null);
@@ -152,33 +207,42 @@ function App2() {
 
                 {/* KPI Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-                    <KPI
-                        label="F1 Score"
-                        val={state?.results?.exp1?.final_with != null
-                            ? state.results.exp1.final_with.toFixed(2) + '%'
-                            : '—'}
-                        sub="Paper: 89.52%"
-                    />
-
-                    <KPI
-                        label="Baseline"
-                        val={state?.results?.exp1?.no_cti_f1?.[0] != null
-                            ? state.results.exp1.no_cti_f1[0].toFixed(2) + '%'
-                            : '—'}
-                        sub="Static Model"
-                    />
-
-                    <KPI
-                        label="Improvement"
-                        val={state?.results?.exp1?.improvement != null
-                            ? '+' + state.results.exp1.improvement.toFixed(2) + '%'
-                            : '—'}
-                        sub="Target: +9.29%"
-                    />
-
-                    <KPI label="KMeans++ vs Rule" val="+30.92%" sub="Efficiency" />
-                    <KPI label="SVM FPR" val="7.70%" sub="Target" />
-                    <KPI label="KMeans FPR" val="42.78%" sub="Baseline" />
+                    <div className="kpi">
+                        <div className="label">IDS + CTI · F1 Score</div>
+                        <div className="val c-green" id="kpi_f1_cti">{kpiResults.kpi_f1_cti?.val ?? '—'}</div>
+                        <div className="sub">Paper target: 89.52%</div>
+                        <div className="bar"><div className="bar-fill" id="bar_f1_cti" style={{ width: kpiResults.kpi_f1_cti?.width ?? '0%', background: 'var(--accent2)' }}></div></div>
+                    </div>
+                    <div className="kpi">
+                        <div className="label">Baseline · No CTI</div>
+                        <div className="val c-blue" id="kpi_f1_base">{kpiResults.kpi_f1_base?.val ?? '—'}</div>
+                        <div className="sub">Static offline model</div>
+                        <div className="bar"><div className="bar-fill" id="bar_f1_base" style={{ width: kpiResults.kpi_f1_base?.width ?? '0%', background: 'var(--accent)' }}></div></div>
+                    </div>
+                    <div className="kpi">
+                        <div className="label">CTI F1 Improvement</div>
+                        <div className="val c-warn" id="kpi_imp">{kpiResults.kpi_imp?.val ?? '—'}</div>
+                        <div className="sub">Paper: +9.29%</div>
+                        <div className="bar"><div className="bar-fill" id="bar_imp" style={{ width: kpiResults.kpi_imp?.width ?? '0%', background: 'var(--warn)' }}></div></div>
+                    </div>
+                    <div className="kpi">
+                        <div className="label">KMeans++ vs Rule</div>
+                        <div className="val c-green" id="kpi_km_imp">{kpiResults.kpi_km_imp?.val ?? '—'}</div>
+                        <div className="sub">Paper: +30.92%</div>
+                        <div className="bar"><div className="bar-fill" id="bar_km" style={{ width: kpiResults.kpi_km_imp?.width ??           '0%', background: 'var(--accent2)' }}></div></div>
+                    </div>
+                    <div className="kpi">
+                        <div className="label">SVM False Positive Rate</div>
+                        <div className="val c-blue" id="kpi_svm_fpr">{kpiResults.kpi_svm_fpr?.val ?? '—'}</div>
+                        <div className="sub">Paper: 7.70%</div>
+                        <div className="bar"><div className="bar-fill" id="bar_svm_fpr" style={{ width: kpiResults.kpi_svm_fpr?.width ?? '0%', background: 'var(--accent)' }}></div></div>
+                    </div>
+                    <div className="kpi">
+                        <div className="label">KMeans False Positive</div>
+                        <div className="val c-warn" id="kpi_km_fpr">{kpiResults.kpi_km_fpr?.val ?? '—'}</div>
+                        <div className="sub">Paper: 42.78%</div>
+                        <div className="bar"><div className="bar-fill" id="bar_km_fpr" style={{ width: kpiResults.kpi_km_fpr?.width ?? '0%', background: 'var(--warn)' }}></div></div>
+                    </div>
                 </div>
 
 
@@ -281,6 +345,18 @@ function App2() {
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+                {/* ── RESULTS TABLE ── */}
+                <div className="mt-1 flex items-center gap-2 mb-4">
+                    <div className="font-mono text-[0.72rem] text-[#607080] tracking-widest uppercase flex items-center gap-2 w-full after:content-[''] after:flex-1 after:h-[1px] after:bg-[#1e2d45]">
+                        Detailed Results Table
+                    </div>
+                </div>
+
+                <div className="bg-[#111827] border border-[#1e2d45] rounded-[14px] overflow-hidden mx-0 mb-8">
+                    <div className="overflow-x-auto">
+                        <ResultsTable res={results} />
                     </div>
                 </div>
             </main>

@@ -169,7 +169,7 @@
 
   &::before,
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -4.5px;
     border: 5px solid transparent;
@@ -183,4 +183,81 @@
     right: 0;
     border-right-color: var(--border);
   }
+}
+
+/* ── KPI grid ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 20px 32px 0;
+}
+.kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
+  cursor: default;
+}
+.kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.06), transparent);
+  transition: opacity 0.3s;
+}
+.kpi:hover {
+  border-color: var(--border2);
+  box-shadow: var(--glow-blue);
+}
+.kpi:hover::before {
+  opacity: 1;
+}
+.kpi .label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.kpi .val {
+  font-family: var(--font-mono);
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.kpi .sub {
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.kpi .bar {
+  height: 2px;
+  background: var(--faint);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.kpi .bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+.c-blue {
+  color: var(--accent);
+}
+.c-green {
+  color: var(--accent2);
+}
+.c-warn {
+  color: var(--warn);
+}
+.c-red {
+  color: var(--danger);
 }

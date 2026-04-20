@@ -12,6 +12,7 @@ from flask import Flask, jsonify, Response, request
 from flask_cors import CORS
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from htmltemplate import HTML
 from src.utils.logger import get_logger, load_config
 
 logger = get_logger(__name__)
@@ -27,6 +28,7 @@ state = {
     "traffic_stream": {"benign":0, "malicious":0, "outlier":0, "total":0},
     "live_f1":        [],
     "live_iter":      [],
+    "improvements":  []
 }
 
 def load_results():
@@ -60,6 +62,7 @@ def api_state():
         "last_updated":  state["last_updated"],
         "pipeline_running": state["pipeline_running"],
         "traffic_stream": state["traffic_stream"],
+        "improvements": state["improvements"]
     })
 
 
