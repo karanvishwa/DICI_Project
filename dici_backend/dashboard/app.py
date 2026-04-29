@@ -32,7 +32,7 @@ state = {
 }
 
 def load_results():
-    p = os.path.join(cfg["evaluation"]["results_dir"], "all_results.json")
+    p = os.path.join(cfg["evaluation"]["results_dir"], "all_results_6.json")
     if os.path.exists(p):
         with open(p) as f:
             state["results"]      = json.load(f)

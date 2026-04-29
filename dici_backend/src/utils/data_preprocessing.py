@@ -44,6 +44,50 @@ class SightingPreprocessor:
         X  = self._impute_scale(X, fit=True)
         X, y = self._balance(X, y)
         return train_test_split(X, y, test_size=self.test_size, random_state=self.random_state, stratify=y)
+    
+    def fit_transform_with_ips(self, df):
+        # 1. Capture the IPs before they get dropped or encoded
+        ips = df["src_ip"].values if "src_ip" in df.columns else np.array([None]*len(df))
+        
+        # Updates the df directly
+        df.drop(columns=['src_ip'], inplace=True)
+        
+        # 2. Run the normal pipeline
+        df = self._clean(df)
+        X_df, y = self._encode(df)
+        
+        # 3. We must keep 'ips' aligned with 'X_df' after cleaning/encoding
+        # If _clean dropped rows, we need to match indices
+        ips = ips[df.index] 
+        
+        X = self._impute_scale(X_df, fit=True)
+        
+        # 4. Handle Balancing (Undersampling changes the number of rows)
+        if hasattr(self, '_balance'):
+            X, y, final_indices = self._balance_with_indices(X, y)
+            ips = ips[final_indices]
+
+        # 5. Attach IPs back to X (X becomes an object array or a DataFrame)
+        # Note: Machine Learning models usually want pure floats, so we often
+        # return (X, y, ips) as a triplet instead of merging them.
+        X_train, X_test, y_train, y_test, ips_train, ips_test = train_test_split(
+            X, y, ips, test_size=self.test_size, random_state=self.random_state, stratify=y
+        )
+        
+        return X_train, X_test, y_train, y_test, ips_train, ips_test
+
+    def _balance_with_indices(self, X, y):
+        """Modified balance to return the indices of the rows kept."""
+        indices = np.arange(len(y))
+        if len(np.unique(y)) < 2 or not _IMBLEARN:
+            return X, y, indices
+        
+        rus = RandomUnderSampler(sampling_strategy=self.sampling_strat, random_state=self.random_state)
+        # Resample indices along with data to know which IPs to keep
+        X_r, y_r = rus.fit_resample(X, y)
+        final_indices = rus.sample_indices_ # imblearn stores the kept indices here
+        
+        return X_r, y_r, final_indices
 
     def transform(self, df):
         df = self._clean(df);  X, y = self._encode(df)

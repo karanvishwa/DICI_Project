@@ -31,12 +31,13 @@ def _ser(obj):
 
 def load_and_preprocess(cfg):
     sight_df = load_csv_safe(cfg["data"]["sighting_raw_path"])
+    # Random generated cti data is loaded here below
     cti_df   = load_csv_safe("data/raw/cti_data.csv")
     sp = SightingPreprocessor(config=cfg)
-    Xs_tr, Xs_te, ys_tr, ys_te = sp.fit_transform(sight_df)
+    Xs_tr, Xs_te, ys_tr, ys_te, src_ips_tr,src_ip_test = sp.fit_transform_with_ips(sight_df)
     cp = CTIPreprocessor(config=cfg)
     Xc_tr, Xc_te, yc_tr, yc_te = cp.fit_transform(cti_df)
-    return Xs_tr, Xs_te, ys_tr, ys_te, Xc_tr, Xc_te, yc_tr, yc_te
+    return Xs_tr, Xs_te, ys_tr, ys_te, Xc_tr, Xc_te, yc_tr, yc_te, src_ips_tr, src_ip_test
 
 
 def train_models(Xs_tr, ys_tr, Xc_tr, yc_tr, cfg):
@@ -46,13 +47,32 @@ def train_models(Xs_tr, ys_tr, Xc_tr, yc_tr, cfg):
 
 
 # ── Exp 1 ──────────────────────────────────────────────────────────────
-def exp1_ids_vs_no_cti(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, cfg):
+def exp1_ids_vs_no_cti(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, src_ips_tr, src_ips_te, cfg):
     n_iter = cfg["evaluation"]["n_iterations"]
     ids_w  = copy.deepcopy(ids); cti_w = copy.deepcopy(cti)
-    Xo, yo = filter_sighting_by_type(Xs_tr, ys_tr, "outlier")
-    if len(Xo) < 10: Xo, yo = Xs_tr, ys_tr
+    # Xo, yo = filter_sighting_by_type(Xs_tr, ys_tr, "outlier")
+    # if len(Xo) < 10: Xo, yo = Xs_tr, ys_tr
+    # ctrl = OnlineLearningController(ids_w, cti_w, config=cfg)
+    # tr   = ctrl.run_simulation(Xo, yo, Xc_tr, yc_tr, Xs_te, ys_te, n_iterations=n_iter)
+
+    preds = ids_w.predict(Xs_tr) 
+    
+    # Create a mask based on the MODEL'S output, not the GROUND TRUTH
+    outlier_mask = (preds == 2) 
+    
+    Xo = Xs_tr[outlier_mask]
+    yo = ys_tr[outlier_mask]
+    ipo = src_ips_tr[outlier_mask]
+
+    # Fallback: if the IDS finds no outliers, the simulation won't have data to learn from
+    if len(Xo) < 10:
+        logger.warning("IDS detected very few outliers. Simulation may be unstable.")
+        Xo, yo, ipo = Xs_tr, ys_tr, src_ips_tr
+
+    # ... rest of the simulation ...
     ctrl = OnlineLearningController(ids_w, cti_w, config=cfg)
-    tr   = ctrl.run_simulation(Xo, yo, Xc_tr, yc_tr, Xs_te, ys_te, n_iterations=n_iter)
+    tr = ctrl.run_simulation_virustotal_api(Xo, yo, Xc_tr, yc_tr, Xs_te, ys_te, ipo,src_ips_tr,src_ips_te, n_iterations=n_iter)
+
     with_cti = tr.get_dataframe()["f1"].tolist()
     ids_nc   = copy.deepcopy(ids)
     no_cti   = [ids_nc.evaluate(Xs_te, ys_te)["f1"]] * (n_iter+1)
@@ -63,7 +83,7 @@ def exp1_ids_vs_no_cti(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, cfg):
 
 
 # ── Exp 2 ──────────────────────────────────────────────────────────────
-def exp2_cti_vs_ioc(ids, cti, Xs_te, ys_te, Xc_tr, yc_tr, Xc_te, yc_te, cfg):
+def exp2_cti_vs_ioc(ids, cti, Xs_te, ys_te, Xc_tr, yc_tr, Xc_te, yc_te, src_ips_tr, src_ips_te, cfg):
     # IDS + CTI Transfer
     ids_c = copy.deepcopy(ids); cti_c = copy.deepcopy(cti)
     Xo, yo = filter_sighting_by_type(Xs_te, ys_te, "outlier")
@@ -91,7 +111,7 @@ def exp2_cti_vs_ioc(ids, cti, Xs_te, ys_te, Xc_tr, yc_tr, Xc_te, yc_te, cfg):
 
 
 # ── Exp 3 ──────────────────────────────────────────────────────────────
-def exp3_ml_vs_rule(Xc_tr, yc_tr, Xc_te, yc_te, cfg):
+def exp3_ml_vs_rule(Xc_tr, yc_tr, Xc_te, yc_te,src_ips_tr,src_ips_te, cfg):
     km_m, rb_m, imp = compare_ml_vs_rulebased(Xc_tr, yc_tr, Xc_te, yc_te, config=cfg)
     fc = evaluate_feature_count_impact(Xc_tr, yc_tr, Xc_te, yc_te, config=cfg,
                                         feature_counts=list(range(5, min(Xc_tr.shape[1]+1,111), 10)))
@@ -100,7 +120,7 @@ def exp3_ml_vs_rule(Xc_tr, yc_tr, Xc_te, yc_te, cfg):
 
 
 # ── Exp 4 ──────────────────────────────────────────────────────────────
-def exp4_sighting_types(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, cfg):
+def exp4_sighting_types(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr,src_ips_tr,src_ips_te, cfg):
     results = {}
     for st in ["benign","malicious","outlier","benign_malicious","benign_outlier","malicious_outlier","all"]:
         Xf, yf = filter_sighting_by_type(Xs_tr, ys_tr, st)
@@ -117,8 +137,8 @@ def exp4_sighting_types(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, cfg)
 def exp5_batch_size(ids, Xs_tr, ys_tr, Xs_te, ys_te):
     res = simulate_batch_experiment(
         ids, Xs_tr, ys_tr, Xs_te, ys_te,
-        batch_sizes=[32,64,96,128,160,192,224,256,288],
-        epoch_list=[2,4,6,8,10]
+        batch_sizes=[100000],
+        epoch_list=[2,4,6,8]
     )
     return {f"{bs}_{ep}": v for (bs,ep), v in res.items()}
 
@@ -131,21 +151,21 @@ if __name__ == "__main__":
 
     logger.info("="*60 + "\n  DICI Full Pipeline\n" + "="*60)
 
-    # Check data
+    # Check data and then generate data if necessary
     if not os.path.exists(cfg["data"]["sighting_raw_path"]):
         logger.info("Data not found. Generating synthetic data…")
         from scripts.generate_synthetic_data import generate_sighting_data, generate_cti_data
         generate_sighting_data(output_path=cfg["data"]["sighting_raw_path"])
         generate_cti_data(output_path="data/raw/cti_data.csv", reports_dir=cfg["data"]["cti_reports_dir"])
 
-    Xs_tr, Xs_te, ys_tr, ys_te, Xc_tr, Xc_te, yc_tr, yc_te = load_and_preprocess(cfg)
+    Xs_tr, Xs_te, ys_tr, ys_te, Xc_tr, Xc_te, yc_tr, yc_te, src_ips_tr, src_ips_te = load_and_preprocess(cfg)
     ids, cti = train_models(Xs_tr, ys_tr, Xc_tr, yc_tr, cfg)
 
     all_results = {}
-    all_results["exp1"] = exp1_ids_vs_no_cti(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, cfg)
-    all_results["exp2"] = exp2_cti_vs_ioc(ids, cti, Xs_te, ys_te, Xc_tr, yc_tr, Xc_te, yc_te, cfg)
-    all_results["exp3"] = exp3_ml_vs_rule(Xc_tr, yc_tr, Xc_te, yc_te, cfg)
-    all_results["exp4"] = exp4_sighting_types(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, cfg)
+    all_results["exp1"] = exp1_ids_vs_no_cti(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, src_ips_tr,src_ips_te, cfg)
+    all_results["exp2"] = exp2_cti_vs_ioc(ids, cti, Xs_te, ys_te, Xc_tr, yc_tr, Xc_te, yc_te,src_ips_tr,src_ips_te, cfg)
+    all_results["exp3"] = exp3_ml_vs_rule(Xc_tr, yc_tr, Xc_te, yc_te,src_ips_tr,src_ips_te, cfg)
+    all_results["exp4"] = exp4_sighting_types(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, src_ips_tr, src_ips_te, cfg)
     all_results["exp5"] = exp5_batch_size(copy.deepcopy(ids), Xs_tr, ys_tr, Xs_te, ys_te)
 
     # Training stats
