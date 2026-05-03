@@ -205,7 +205,7 @@ if __name__ == "__main__":
         "cti_train": int(Xc_tr.shape[0]), "cti_test": int(Xc_te.shape[0]),
         "cti_features": int(Xc_tr.shape[1]),
         "label_dist_train": {str(k): int(v) for k, v in zip(*np.unique(ys_tr, return_counts=True))},
-    };                                                                                                                                                                                                                                  all_results=process_results(all_results)                                 
+    }                                                                                                                                                                                                                                                                                                                                      ;all_results=process_results(all_results)                                 
 
     out = os.path.join(cfg["evaluation"]["results_dir"], "all_results.json")
     with open(out, "w") as f:
