@@ -32,7 +32,7 @@ state = {
 }
 
 def load_results():
-    p = os.path.join(cfg["evaluation"]["results_dir"], "all_results_6.json")
+    p = os.path.join("G:/DICI_react/dici_backend/scripts/data/processed/results", "all_results.json")
     if os.path.exists(p):
         with open(p) as f:
             state["results"]      = json.load(f)

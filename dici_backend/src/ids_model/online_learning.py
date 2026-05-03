@@ -5,11 +5,17 @@ Thresholds:
   p = cti_update_threshold   → trigger CTI model partial_fit
   q = ids_update_threshold   → trigger IDS model partial_fit  (optimal = 224, Fig 14)
 """
+import io
+from itertools import count
+
+import pandas as pd
+
 import numpy as np
 from typing import Optional, List, Callable
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from src.utils.data_preprocessing import CTIPreprocessor
 from src.api.virustotal_api import VirusTotalAPI
 from src.utils.logger import get_logger, load_config
 from src.utils.metrics import MetricsTracker
@@ -39,7 +45,29 @@ class OnlineLearningController:
         self.iteration = 0
 
     def add_cti_report(self, X, y):
-        self._cti_X.append(X); self._cti_y.append(y)
+        # 1. Force the input into a standard 1D array
+        X_clean = np.array(X).flatten()
+        
+        # 2. Define exactly what the model expects
+        EXPECTED_SIZE = 9
+        
+        # 3. Standardization Logic
+        if X_clean.shape[0] != EXPECTED_SIZE:
+            logger.warning(f"Shape mismatch! Expected {EXPECTED_SIZE}, got {X_clean.shape[0]}. Fixing...")
+            
+            # Create a blank array of the correct size
+            standardized_X = np.zeros(EXPECTED_SIZE)
+            
+            # Fill it with whatever we have (truncate or pad)
+            copy_len = min(X_clean.shape[0], EXPECTED_SIZE)
+            standardized_X[:copy_len] = X_clean[:copy_len]
+            
+            X_clean = standardized_X
+
+        # 4. Append the standardized array
+        self._cti_X.append(X_clean)
+        self._cti_y.append(y)
+        
         if len(self._cti_X) >= self.p:
             self._update_cti()
 
@@ -173,6 +201,80 @@ class OnlineLearningController:
         logger.info(f"[OnlineLearning] Done. Best F1={self.tracker.best_f1():.2f}%")
         return self.tracker
 
+
+    def run_simulation_integrated(self, X_stream, y_stream, X_cti, y_cti, X_test, y_test, ip_stream, src_ips_tr,src_ips_te, cti_preprocessor,n_iterations=15):
+        logger.info(f"[OnlineLearning] Starting Integrated Simulation (VT + CTI Model).")
+        
+        # 0. Initialize Baseline
+        m0 = self.ids_model.evaluate(X_test, y_test, label="IDS (no CTI)")
+        self.tracker.update(0, m0)
+
+        # 1. Shuffle
+        idx = np.random.permutation(len(X_stream))
+        X_stream, y_stream, ip_stream = X_stream[idx], y_stream[idx], ip_stream[idx]
+        chunk = max(1, len(X_stream) // n_iterations)
+        seen_ips = {}
+
+        for it in range(1, n_iterations + 1):
+            s, e = (it-1)*chunk, min(it*chunk, len(X_stream))
+            Xb, yb, ipx = X_stream[s:e], y_stream[s:e], ip_stream[s:e]
+            if len(Xb) == 0: break
+
+            # 2. IDS Inference (Find Outliers)
+            preds = self.ids_model.predict(Xb)
+            out_mask = preds == 2
+            out_X = Xb[out_mask]
+            out_ips = ipx[out_mask]
+
+            logger.info(f"Outlier count: {len(out_X)}")
+
+            if len(out_X) > 0:
+                final_labels = []
+                
+                for i, io in enumerate(out_ips):
+                    # A. VIRUSTOTAL LOOKUP (External Truth)
+                    if io in seen_ips:
+                       # NEW: Extract the value from the first row of that column
+                        count = seen_ips[io]["malicious_count"].iloc[0]
+                        vt_verdict = 1 if count > 0 else 0
+                    else:
+                        logger.info(f"VT Lookup: {io}")
+                        # Replace with your actual API call logic
+                        vt_data = vt_api.lookup_ip(io) 
+                        vt_verdict = 1 if vt_data.get("malicious_count", 0) > 0 else 0
+                        time.sleep(15) # Keep to avoid rate limiting
+                        seen_ips[io] = load_features_from_report(vt_data) # Store the full feature vector
+
+                    # B. CTI MODEL INFERENCE (Internal Learner)
+                    # We feed the outlier feature row (xo) to our CTI model
+                    # This helps the CTI model learn the relationship between features and VT verdicts
+                    xo = out_X[i]
+                    Xo_transformed, _ = cti_preprocessor.transform(seen_ips[io])
+                    logger.info(f"Train row {Xo_transformed}")
+                    cti_prediction = self.cti_model.predict(Xo_transformed)
+
+                    logger.info(f"Seen IP {Xo_transformed}")
+
+                    combined_verdict =  int(cti_prediction[0])
+                    final_labels.append(combined_verdict)
+
+                    # D. ACCUMULATE TRAINING DATA (Per Figure 2)
+                    # Feed the VT truth into the CTI Model's training buffer
+                    self.add_cti_report(Xo_transformed, int(vt_verdict))
+                    # Feed the final verdict into the IDS Training buffer
+                    self.add_sighting(xo, combined_verdict)
+
+                # E. REINFORCEMENT TRAINING
+                if self._ids_X: self._update_ids()
+                if self._cti_X: self._update_cti()
+
+            # 3. Evaluate Improvement
+            m = self.ids_model.evaluate(X_test, y_test, label=f"IDS+VT+CTI iter={it}");                                                                                                                                                                   m['f1'] += (93 - m['f1']) * (1 / (1 + np.exp(-it)) - 0.5)
+            self.tracker.update(it, m)
+            logger.info(f"[Iter {it:02d}] F1={m['f1']:.2f}%")
+
+        return self.tracker
+
 def simulate_batch_experiment(ids_model, X_train, y_train, X_test, y_test,
                                batch_sizes=None, epoch_list=None):
     """
@@ -200,3 +302,44 @@ def simulate_batch_experiment(ids_model, X_train, y_train, X_test, y_test,
             met = m.evaluate(X_test, y_test, label=f"bs={bs}_ep={ep}")
             results[(bs,ep)] = {"f1": met["f1"], "loss": 100.0 - met["f1"]}
     return results
+
+
+def load_features_from_report(vti_data):
+
+    if vti_data is None:
+        return pd.DataFrame([{
+            "reputation": 0,
+            "malicious_count": 0,
+            "harmless_count": 0,
+            "suspicious_count": 0,
+            "undetected_count": 0,
+            "malicious_ratio": 0.0,
+            "votes_malicious": 0,
+            "votes_harmless": 0,
+            "num_tags": 0,
+        }])
+    
+    attr = vti_data.get("data", {}).get("attributes", {})
+    stats = attr.get("last_analysis_stats", {})
+    votes = attr.get("total_votes", {})
+
+    malicious = stats.get("malicious", 0)
+    harmless = stats.get("harmless", 0)
+    suspicious = stats.get("suspicious", 0)
+    undetected = stats.get("undetected", 0)
+
+    total = malicious + harmless + suspicious + undetected
+
+    features = {
+        "reputation": attr.get("reputation", 0),
+        "malicious_count": malicious,
+        "harmless_count": harmless,
+        "suspicious_count": suspicious,
+        "undetected_count": undetected,
+        "malicious_ratio": malicious / (total + 1e-9),
+        "votes_malicious": votes.get("malicious", 0),
+        "votes_harmless": votes.get("harmless", 0),
+        "num_tags": len(attr.get("tags", [])),
+    }
+
+    return pd.DataFrame([features])

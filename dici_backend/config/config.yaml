@@ -6,7 +6,7 @@ api:
   retry_delay: 2
 
 data:
-  sighting_raw_path: "data/raw/new_sighting_data.csv"
+  sighting_raw_path: "data/raw/australia_combined_data.csv"
   cti_reports_dir: "data/cti_reports/"
   processed_sighting_path: "data/processed/sighting_processed.csv"
   processed_cti_path: "data/processed/cti_processed.csv"
@@ -16,7 +16,13 @@ preprocessing:
   random_state: 42
   drop_features: ["time_start", "time_end", "src_ip", "dest_ip", "src_port"]
   categorical_features:
-    ["protocol", "flags", "forwarding_status", "source_type_of_service"]
+    [
+      "protocol",
+      "flags",
+      "forwarding_status",
+      "source_type_of_service",
+      "state",
+    ]
   sighting_label_col: "label"
   cti_label_col: "label"
   missing_threshold: 0.5
@@ -51,7 +57,7 @@ online_learning:
   sighting_type: "outlier"
 
 evaluation:
-  n_iterations: 21
+  n_iterations: 15
   results_dir: "data/processed/results/"
 
 dashboard:

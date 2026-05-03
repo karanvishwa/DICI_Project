@@ -4,3 +4,16 @@
 2026-04-20 12:55:58,577 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
 2026-04-20 13:33:03,864 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
 2026-04-20 13:53:16,862 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:06:02,948 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:07:19,976 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:16:40,417 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:19:40,211 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:23:03,316 | ERROR | __main__ | Pipeline error: Command '['C:\\Users\\karan\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'scripts/run_pipeline.py']' returned non-zero exit status 1.
+2026-05-01 15:24:05,344 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:29:05,261 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:33:23,607 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:34:11,600 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:36:54,043 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:38:55,608 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-01 15:40:42,258 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-03 09:37:26,467 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc

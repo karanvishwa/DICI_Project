@@ -40,21 +40,21 @@ class SightingPreprocessor:
         self.feature_names_: Optional[List[str]] = None
 
     def fit_transform(self, df):
-        df = self._clean(df);  X, y = self._encode(df)
+        df = self._clean(df);  X, y = self._encode(df, is_training=True)
         X  = self._impute_scale(X, fit=True)
         X, y = self._balance(X, y)
         return train_test_split(X, y, test_size=self.test_size, random_state=self.random_state, stratify=y)
     
-    def fit_transform_with_ips(self, df):
+    def fit_transform_with_ips(self, df, isTraining) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         # 1. Capture the IPs before they get dropped or encoded
         ips = df["src_ip"].values if "src_ip" in df.columns else np.array([None]*len(df))
         
         # Updates the df directly
-        df.drop(columns=['src_ip'], inplace=True)
+        df.drop(columns=['src_ip', 'dest_ip'], inplace=True)
         
         # 2. Run the normal pipeline
         df = self._clean(df)
-        X_df, y = self._encode(df)
+        X_df, y = self._encode(df, is_training=isTraining)
         
         # 3. We must keep 'ips' aligned with 'X_df' after cleaning/encoding
         # If _clean dropped rows, we need to match indices
@@ -90,7 +90,7 @@ class SightingPreprocessor:
         return X_r, y_r, final_indices
 
     def transform(self, df):
-        df = self._clean(df);  X, y = self._encode(df)
+        df = self._clean(df);  X, y = self._encode(df,is_training=False)
         return self._impute_scale(X, fit=False), y
 
     def _clean(self, df):
@@ -98,13 +98,21 @@ class SightingPreprocessor:
         thresh = int(self.missing_thr * df.shape[1])
         return df.dropna(thresh=thresh)
 
-    def _encode(self, df):
+    def _encode(self, df, is_training=True):
         y  = df[self.label_col].values.astype(int) if self.label_col in df.columns else np.zeros(len(df), dtype=int)
         df = df.drop(columns=[self.label_col], errors="ignore")
+
         cats = [c for c in self.cat_features if c in df.columns]
+
         if cats:
             df = pd.get_dummies(df, columns=cats)
-        self.feature_names_ = list(df.columns)
+
+        if is_training:
+            self.feature_names_ = list(df.columns)   # lock schema
+        else:
+             # 🔥 FAST + CORRECT
+            df = df.reindex(columns=self.feature_names_, fill_value=0)
+
         return df, y
 
     def _impute_scale(self, X, fit=True):
@@ -145,31 +153,52 @@ class CTIPreprocessor:
         self.scaler  = StandardScaler()
         self.imputer = SimpleImputer(strategy="mean")
         self.feature_names_: Optional[List[str]] = None
+        self.feature_names_: Optional[List[str]] = None 
+        self.encoder_categories_ = None # Store OHE categories here
 
     def fit_transform(self, df):
-        df = self._clean(df);  X, y = self._encode(df)
+        df = self._clean(df);  X, y = self._encode(df,is_training=True)
         X  = self._impute_scale(X, fit=True)
         X, y = self._balance(X, y)
         return train_test_split(X, y, test_size=self.test_size, random_state=self.random_state)
 
     def transform(self, df):
-        df = self._clean(df);  X, y = self._encode(df)
+        df = self._clean(df);  X, y = self._encode(df,is_training=False)
         return self._impute_scale(X, fit=False), y
 
     def _clean(self, df):
         thresh = int(self.missing_thr * df.shape[1])
         return df.dropna(thresh=thresh)
 
-    def _encode(self, df):
-        y  = df[self.label_col].values.astype(int) if self.label_col in df.columns else np.zeros(len(df), dtype=int)
+    def _encode(self, df, is_training=False):
+        y = df[self.label_col].values.astype(int) if self.label_col in df.columns else np.zeros(len(df), dtype=int)
+
+        # 1. Drop labels
         df = df.drop(columns=[c for c in [self.label_col,"ip","src_ip","dest_ip"] if c in df.columns], errors="ignore")
-        obj_cols = df.select_dtypes(include="object").columns.tolist()
-        if obj_cols:
-            df = pd.get_dummies(df, columns=obj_cols)
-        if df.shape[1] > self.n_features:
-            top = df.var(numeric_only=True).nlargest(self.n_features).index.tolist()
-            df  = df[top]
-        self.feature_names_ = list(df.columns)
+
+
+        logger.info(f"Shape is {df.shape}")
+        
+        # 2. Get dummies (or better: OneHotEncoder)
+        # If not training, we must ensure we have the exact columns from training
+        if is_training:
+            df = pd.get_dummies(df, columns=df.select_dtypes(include="object").columns.tolist())
+            self.feature_names_ = list(df.columns) # LOCK IN THE COLUMNS
+        else:
+            # Inference mode: Encode, but then force the schema
+            df = pd.get_dummies(df, columns=df.select_dtypes(include="object").columns.tolist())
+            
+            # ADD MISSING COLUMNS AS ZEROS
+            # This adds columns that existed in training but are missing here
+            for col in self.feature_names_:
+                if col not in df.columns:
+                    df[col] = 0
+            
+            # REMOVE EXTRA COLUMNS
+            # This removes columns that didn't exist in training
+            df = df[self.feature_names_] 
+            
+        logger.info(f"Encoded shape of Y {y.shape}")
         return df, y
 
     def _impute_scale(self, X, fit=True):
