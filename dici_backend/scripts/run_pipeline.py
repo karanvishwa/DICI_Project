@@ -23,6 +23,8 @@ from src.utils.metrics import compute_metrics
 
 logger = get_logger(__name__)
 
+BASE = "G:/DICI_react/dici_backend/scripts/raw"  # Adjust this path as needed
+
 
 def _ser(obj):
     if isinstance(obj, (np.integer, np.int64)): return int(obj)
@@ -34,7 +36,7 @@ def _ser(obj):
 def load_and_preprocess(cfg):
     sight_df = load_csv_safe(cfg["data"]["sighting_raw_path"])
     # Random generated cti data is loaded here below
-    cti_df   = load_csv_safe("G:/DICI_react/dici_backend/scripts/data/raw/cti_features_labeled.csv")
+    cti_df   = load_csv_safe(f"{BASE}/cti_features_labeled.csv")
     sp = SightingPreprocessor(config=cfg)
     Xs_tr, Xs_te, ys_tr, ys_te, src_ips_tr,src_ip_test = sp.fit_transform_with_ips(sight_df, isTraining=True)
     cp = CTIPreprocessor(config=cfg)
@@ -79,7 +81,7 @@ def exp1_ids_vs_no_cti(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, src_i
     #---------------------------------------------------------------
 
 
-    new_sigh   = load_csv_safe("G:/DICI_react/dici_backend/scripts/data/raw/new_sighting_data.csv")
+    new_sigh   = load_csv_safe(f"{BASE}/new_sighting_data.csv")
     Xs_tr_sigh, Xs_te_sigh, ys_tr_sigh, ys_te_sigh, src_ips_tr_sigh,src_ip_test_sigh = sp.fit_transform_with_ips(new_sigh, isTraining=False)
 
     logger.info(f"Shape of new sighting data: {Xs_tr_sigh.shape}, {ys_tr_sigh.shape}")

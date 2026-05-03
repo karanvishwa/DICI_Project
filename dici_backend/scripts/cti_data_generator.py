@@ -8,6 +8,8 @@ cfg    = load_config()
 vt_api = VirusTotalAPI(cfg)
 logger = get_logger(__name__)
 
+BASE = "G:/DICI_react/dici_backend/scripts/raw"  # Adjust this path as needed
+
 def generate_public_ips(n=200):
     ips = set()
 
@@ -23,7 +25,7 @@ def generate_public_ips(n=200):
     return list(ips)
 
 # Load your new raw dataset
-df = pd.read_csv("G:/DICI_react/dici_backend/scripts/dici_backend/scripts/data/raw/dataset.csv")
+df = pd.read_csv(f"{BASE}/dataset.csv")
 
 # 2. Filter for only the columns we need
 df_filtered_src = df["IPV4_SRC_ADDR"].unique()  # Start with src_ip
@@ -99,4 +101,4 @@ df_features = pd.DataFrame(features_list)
 
 
 # 4. Save for use in run_pipeline.py
-df_features.to_csv("G:/DICI_react/dici_backend/scripts/data/raw/cti_features_labeled.csv", index=False)
+df_features.to_csv(f"{BASE}/cti_features_labeled.csv", index=False)

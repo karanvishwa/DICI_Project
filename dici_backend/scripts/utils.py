@@ -1,10 +1,13 @@
 import pandas as pd
 
+BASE = "G:/DICI_react/dici_backend/scripts/raw"  # Adjust this path as needed
+
+
 files = [
-    "data/raw/australia_data/ip_1.csv",
-    "data/raw/australia_data/ip_2.csv",
-    "data/raw/australia_data/ip_3.csv",
-    "data/raw/australia_data/ip_4.csv"
+        f"{BASE}/australia_data/ip_1.csv",
+        f"{BASE}/australia_data/ip_2.csv",
+        f"{BASE}/australia_data/ip_3.csv",
+        f"{BASE}/australia_data/ip_4.csv"
 ]
 
 mapping = {
@@ -57,4 +60,4 @@ for col in numeric_cols:
         final_df[col] = final_df[col].astype(float)
 
 
-final_df.to_csv("data/raw/australia_combined_data.csv", index=False)
+final_df.to_csv(f"{BASE}/australia_combined_data.csv", index=False)
