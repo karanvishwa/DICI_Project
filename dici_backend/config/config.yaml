@@ -6,10 +6,10 @@ api:
   retry_delay: 2
 
 data:
-  sighting_raw_path: "data/raw/australia_combined_data.csv"
-  cti_reports_dir: "data/cti_reports/"
-  processed_sighting_path: "data/processed/sighting_processed.csv"
-  processed_cti_path: "data/processed/cti_processed.csv"
+  sighting_raw_path: "G:/DICI_react/dici_backend/scripts/data/raw/australia_combined_data.csv"
+  cti_reports_dir: "G:/DICI_react/dici_backend/scripts/data/cti_reports/"
+  processed_sighting_path: "G:/DICI_react/dici_backend/scripts/data/processed/sighting_processed.csv"
+  processed_cti_path: "G:/DICI_react/dici_backend/scripts/data/processed/cti_processed.csv"
 
 preprocessing:
   test_size: 0.2
@@ -39,7 +39,7 @@ ids_model:
     n_clusters: 2
     random_state: 42
     max_iter: 100
-  model_save_path: "data/processed/ids_model.joblib"
+  model_save_path: "G:/DICI_react/dici_backend/scripts/data/processed/ids_model.joblib"
 
 cti_transfer_model:
   kmeanspp:
@@ -47,7 +47,7 @@ cti_transfer_model:
     random_state: 42
     init: "k-means++"
     max_iter: 300
-  model_save_path: "data/processed/cti_model.joblib"
+  model_save_path: "G:/DICI_react/dici_backend/scripts/data/processed/cti_model.joblib"
   n_features: 50
 
 online_learning:
@@ -58,7 +58,7 @@ online_learning:
 
 evaluation:
   n_iterations: 15
-  results_dir: "data/processed/results/"
+  results_dir: "G:/DICI_react/dici_backend/scripts/data/processed/results/"
 
 dashboard:
   host: "0.0.0.0"

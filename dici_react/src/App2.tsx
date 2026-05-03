@@ -11,7 +11,6 @@ const Plot = PlotModule.default || PlotModule;
 // --- Types & Constants ---
 interface TrafficStream { benign: number; malicious: number; outlier: number; total: number; }
 interface DashboardState { results: any; last_updated: string; pipeline_running: boolean; traffic_stream: TrafficStream; }
-
 const API_BASE = "http://localhost:5000";
 const COLORS = {
     bg: '#111827', accent: '#00d4ff', green: '#00ff9d', warn: '#ffb700',
@@ -33,6 +32,19 @@ function fmtNum(v: any) { return v != null ? (+v).toFixed(2) : '—'; }
 function App2() {
     const [state, setState] = useState<DashboardState | null>(null);
     const [isRunning, setIsRunning] = useState(false);
+
+    // 1. Add the simTraffic function using useCallback
+    const simTraffic = useCallback(async () => {
+        try {
+            await fetch(`${API_BASE}/api/simulate_traffic`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ n: Math.floor(Math.random() * 200 + 100) })
+            });
+        } catch (err) {
+            console.error("Traffic sim error:", err);
+        }
+    }, []);
 
     const fetchData = useCallback(async () => {
         try {
@@ -64,9 +76,12 @@ function App2() {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 3000);
+        simTraffic(); // Start simulating traffic on mount
+        const interval = setInterval(() => {
+            fetchData();
+            simTraffic(); }, 3000);
         return () => clearInterval(interval);
-    }, [fetchData]);
+    }, [fetchData, simTraffic]);
 
     const results = state?.results || {};
 

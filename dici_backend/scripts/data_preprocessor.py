@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load your new raw dataset
-df = pd.read_csv("data/raw/dataset.csv")
+df = pd.read_csv("G:/DICI_react/dici_backend/scripts/data/raw/dataset.csv")
 
 # 1. Define the mapping (Old Name: New Name)
 mapping = {
@@ -122,7 +122,7 @@ for col in numeric_cols:
 #--------------------------------End of changes for using this data for cti model simulation--------------------------------
 
 # 4. Save for use in run_pipeline.py
-df_filtered.to_csv("data/raw/new_sighting_data.csv", index=False)
+df_filtered.to_csv("G:/DICI_react/dici_backend/scripts/data/raw/new_sighting_data.csv", index=False)
 
 
 

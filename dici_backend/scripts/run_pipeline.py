@@ -34,7 +34,7 @@ def _ser(obj):
 def load_and_preprocess(cfg):
     sight_df = load_csv_safe(cfg["data"]["sighting_raw_path"])
     # Random generated cti data is loaded here below
-    cti_df   = load_csv_safe("data/raw/cti_features_labeled.csv")
+    cti_df   = load_csv_safe("G:/DICI_react/dici_backend/scripts/data/raw/cti_features_labeled.csv")
     sp = SightingPreprocessor(config=cfg)
     Xs_tr, Xs_te, ys_tr, ys_te, src_ips_tr,src_ip_test = sp.fit_transform_with_ips(sight_df, isTraining=True)
     cp = CTIPreprocessor(config=cfg)
@@ -79,7 +79,7 @@ def exp1_ids_vs_no_cti(ids, cti, Xs_tr, ys_tr, Xs_te, ys_te, Xc_tr, yc_tr, src_i
     #---------------------------------------------------------------
 
 
-    new_sigh   = load_csv_safe("data/raw/new_sighting_data.csv")
+    new_sigh   = load_csv_safe("G:/DICI_react/dici_backend/scripts/data/raw/new_sighting_data.csv")
     Xs_tr_sigh, Xs_te_sigh, ys_tr_sigh, ys_te_sigh, src_ips_tr_sigh,src_ip_test_sigh = sp.fit_transform_with_ips(new_sigh, isTraining=False)
 
     logger.info(f"Shape of new sighting data: {Xs_tr_sigh.shape}, {ys_tr_sigh.shape}")
@@ -183,11 +183,8 @@ if __name__ == "__main__":
 
     # Check data and then generate data if necessary
     if not os.path.exists(cfg["data"]["sighting_raw_path"]):
-        logger.info("Data not found. Generating synthetic data…")
-        from scripts.generate_synthetic_data import generate_sighting_data, generate_cti_data
-        generate_sighting_data(output_path=cfg["data"]["sighting_raw_path"])
-        generate_cti_data(output_path="data/raw/cti_data.csv", reports_dir=cfg["data"]["cti_reports_dir"])
-
+        logger.info("Data not found")
+       
     Xs_tr, Xs_te, ys_tr, ys_te, Xc_tr, Xc_te, yc_tr, yc_te, src_ips_tr, src_ips_te, sp, cp = load_and_preprocess(cfg)
     ids, cti = train_models(Xs_tr, ys_tr, Xc_tr, yc_tr, cfg)
 

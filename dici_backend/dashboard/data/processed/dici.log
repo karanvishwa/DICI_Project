@@ -29,3 +29,13 @@
 2026-05-03 22:29:31,995 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
 2026-05-03 22:30:02,893 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
 2026-05-03 22:30:24,680 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-03 23:08:33,567 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-03 23:40:52,317 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-03 23:55:23,246 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-03 23:57:40,177 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-04 00:22:53,552 | ERROR | __main__ | Pipeline error: Command '['C:\\Users\\karan\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'scripts/run_pipeline.py']' returned non-zero exit status 1.
+2026-05-04 00:27:17,411 | ERROR | __main__ | Pipeline error: Command '['C:\\Users\\karan\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'scripts/run_pipeline.py']' returned non-zero exit status 1.
+2026-05-04 00:28:07,151 | ERROR | __main__ | Pipeline error: Command '['C:\\Users\\karan\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'scripts/run_pipeline.py']' returned non-zero exit status 1.
+2026-05-04 00:30:10,598 | INFO | src.api.virustotal_api | API key is32ab0f829fb5725c360c8ec26fe914c0e4da7ae7301c88225b4d7631dc2aa0cc
+2026-05-04 00:30:32,085 | ERROR | __main__ | Pipeline error: Command '['C:\\Users\\karan\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'scripts/run_pipeline.py']' returned non-zero exit status 1.
+2026-05-04 00:32:31,189 | ERROR | __main__ | Pipeline error: Command '['C:\\Users\\karan\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'scripts/run_pipeline.py']' returned non-zero exit status 1.
