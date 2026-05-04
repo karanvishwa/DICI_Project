@@ -1,6 +1,6 @@
 # ⚡ DICI — Dynamic IDS with CTI Integrated
 
-> **Paper:** *Evolving ML-Based Intrusion Detection: Cyber Threat Intelligence for Dynamic Model Updates*
+> **Paper:** _Evolving ML-Based Intrusion Detection: Cyber Threat Intelligence for Dynamic Model Updates_
 > IEEE Transactions on Machine Learning in Communications and Networking (TMLCN), 2025
 > DOI: 10.1109/TMLCN.2025.3564587
 
@@ -23,10 +23,10 @@ Network Traffic  ──►  IDS Model  ──►  Benign / Malicious / Outlier
 
 ### Two AI Models
 
-| Model | Algorithm | Role |
-|-------|-----------|------|
-| **IDS Model** | Hybrid SVM + KMeans | Classify traffic as Benign / Malicious / Outlier |
-| **CTI Transfer Model** | KMeans++ | Analyse CTI reports → generate IDS training data |
+| Model                  | Algorithm           | Role                                             |
+| ---------------------- | ------------------- | ------------------------------------------------ |
+| **IDS Model**          | Hybrid SVM + KMeans | Classify traffic as Benign / Malicious / Outlier |
+| **CTI Transfer Model** | KMeans++            | Analyse CTI reports → generate IDS training data |
 
 ---
 
@@ -59,16 +59,16 @@ DICI_Complete/
 │   └── app.py                       ← Flask + Plotly live dashboard (http://localhost:5000)
 │
 ├── scripts/
-│   ├── generate_synthetic_data.py  ← Generate test datasets (no real data needed)
-│   └── run_pipeline.py             ← Full experiment runner → saves all_results.json
+│   ├── cti_data_generator.py       ← Generate test datasets (no real data needed)
+│   ├── data_preprocessor.py        ← Generate test datasets (no real data needed)
+│   ├── utils.py                    ← Helper functions
+│   ├── run_pipeline.py             ← Full experiment runner → saves all_results.json
+|   └── data/
+|        ├── raw/                         ← Generated CSV datasets
+|        ├── processed/results/           ← Experiment results JSON + saved models
+|        └── cti_reports/                 ← VT JSON reports (cached)
 │
-├── tests/
-│   └── test_all.py                  ← 41 unit + integration tests
 │
-├── data/
-│   ├── raw/                         ← Generated CSV datasets
-│   ├── processed/results/           ← Experiment results JSON + saved models
-│   └── cti_reports/                 ← VT JSON reports (cached)
 │
 └── requirements.txt
 ```
@@ -78,48 +78,51 @@ DICI_Complete/
 ## Quick Start
 
 ### 1. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 2. Generate synthetic data
+
 ```bash
-python scripts/generate_synthetic_data.py
+python scripts/data_preprocessor.py
+python scripts/cti_data_generator.py
 ```
+
 This creates synthetic datasets matching paper statistics:
+
 - **Sighting:** 15,000 traffic flows with 14 features (Table 5 of paper)
 - **CTI:** 2,112 structured CTI reports with 82 features
 
 ### 3. Run the full pipeline
+
 ```bash
 python scripts/run_pipeline.py
 ```
+
 Runs all 5 experiments and saves results to `data/processed/results/all_results.json`.
 
 ### 4. Launch the live dashboard
+
 ```bash
 python dashboard/app.py
 ```
-Open **http://localhost:5000** — fully interactive Plotly charts with zoom, pan, hover tooltips, animated transitions.
 
-### 5. Run tests
-```bash
-python tests/test_all.py
-```
-All 41 tests should pass.
+Open **http://localhost:5000** — fully interactive Plotly charts with zoom, pan, hover tooltips, animated transitions.
 
 ---
 
 ## Experiments Reproduced
 
-| # | Figure | Description | Paper Result |
-|---|--------|-------------|-------------|
-| Exp 1 | Fig 6  | IDS+CTI vs IDS without CTI | **+9.29% F1** |
-| Exp 2 | Fig 12 | CTI Transfer Model vs IoC Database | **+7.16% F1, +12.61% Recall** |
-| Exp 3 | Fig 13 | KMeans++ vs Rule-based CTI | **+30.92% F1** |
-| Exp 4 | Fig 8  | Sighting type impact on CTI training | **Outlier-only = best (89.52%)** |
-| Exp 5 | Fig 14/15 | Batch size optimisation | **Optimal = 224** |
-| — | Fig 7  | ML-IDS vs DL-IDS resources | **ML is 18× faster, 4× less memory** |
+| #     | Figure    | Description                          | Paper Result                         |
+| ----- | --------- | ------------------------------------ | ------------------------------------ |
+| Exp 1 | Fig 6     | IDS+CTI vs IDS without CTI           | **+9.29% F1**                        |
+| Exp 2 | Fig 12    | CTI Transfer Model vs IoC Database   | **+7.16% F1, +12.61% Recall**        |
+| Exp 3 | Fig 13    | KMeans++ vs Rule-based CTI           | **+30.92% F1**                       |
+| Exp 4 | Fig 8     | Sighting type impact on CTI training | **Outlier-only = best (89.52%)**     |
+| Exp 5 | Fig 14/15 | Batch size optimisation              | **Optimal = 224**                    |
+| —     | Fig 7     | ML-IDS vs DL-IDS resources           | **ML is 18× faster, 4× less memory** |
 
 ---
 
@@ -156,35 +159,35 @@ To use real CTI data instead of synthetic mock data:
 
 ## Key Hyperparameters (Table 6 of paper)
 
-| Model | Parameter | Value |
-|-------|-----------|-------|
-| SVM (IDS) | loss | hinge |
-| SVM (IDS) | alpha | 0.1 |
-| SVM (IDS) | random_state | 456 |
-| KMeans (IDS) | n_clusters | 2 |
-| KMeans (IDS) | max_iter | 100 |
-| KMeans++ (CTI) | n_clusters | 2 |
-| KMeans++ (CTI) | init | k-means++ |
-| Online Learning | batch_size (q) | 224 (optimal) |
-| Online Learning | CTI threshold (p) | 10 |
+| Model           | Parameter         | Value         |
+| --------------- | ----------------- | ------------- |
+| SVM (IDS)       | loss              | hinge         |
+| SVM (IDS)       | alpha             | 0.1           |
+| SVM (IDS)       | random_state      | 456           |
+| KMeans (IDS)    | n_clusters        | 2             |
+| KMeans (IDS)    | max_iter          | 100           |
+| KMeans++ (CTI)  | n_clusters        | 2             |
+| KMeans++ (CTI)  | init              | k-means++     |
+| Online Learning | batch_size (q)    | 224 (optimal) |
+| Online Learning | CTI threshold (p) | 10            |
 
 ---
 
 ## Dataset Description (Table 5 of paper)
 
-| Feature | Description |
-|---------|-------------|
-| `duration` | Duration of network session (seconds) |
-| `dest_port` | Destination port number |
-| `protocol` | TCP / UDP / ICMP |
-| `flags` | TCP flags |
-| `forwarding_status` | Packet forwarding status |
-| `source_type_of_service` | ToS field in IP header |
-| `ingress_packet_count` | Packets received in session |
-| `ingress_byte_count` | Bytes received in session |
-| `label` | **0=Benign, 1=Malicious, 2=Outlier** |
+| Feature                  | Description                           |
+| ------------------------ | ------------------------------------- |
+| `duration`               | Duration of network session (seconds) |
+| `dest_port`              | Destination port number               |
+| `protocol`               | TCP / UDP / ICMP                      |
+| `flags`                  | TCP flags                             |
+| `forwarding_status`      | Packet forwarding status              |
+| `source_type_of_service` | ToS field in IP header                |
+| `ingress_packet_count`   | Packets received in session           |
+| `ingress_byte_count`     | Bytes received in session             |
+| `label`                  | **0=Benign, 1=Malicious, 2=Outlier**  |
 
-*Dropped before ML: time_start, time_end, src_ip, dest_ip, src_port*
+_Dropped before ML: time_start, time_end, src_ip, dest_ip, src_port_
 
 ---
 
